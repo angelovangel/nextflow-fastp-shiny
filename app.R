@@ -117,7 +117,7 @@
           shinyjs::html(id = "stdout", "")
           p <- processx::run("nextflow", 
                       args = c("run" ,
-                               "nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
+                               "angelovangel/nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
                                # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
                                "--readsdir", 
                                parseDirPath(volumes, input$fastq_folder)), 

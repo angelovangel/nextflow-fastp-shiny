@@ -13,8 +13,8 @@ The GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflo
 nextflow pull angelovangel/nextflow-fastp
 ```
 
-This will install the nextflow-fastp pipeline under $HOME/.nextflow/assets/angelovangel/nextflow-fastp/   
-In case you have problems using `nextflow pull`
+This will install the nextflow-fastp pipeline under `$HOME/.nextflow/assets/angelovangel/nextflow-fastp/`   
+In case you have problems using `nextflow pull` due to proxy issues (I have), you can use `git clone` or other methods to install the pipeline so that it is method to 
 
 - install the Shiny app:
 
@@ -35,6 +35,9 @@ Select a folder containing fastq files using the `Select fastq folder` button an
 ```bash
 cat .nextflow.log
 ```
+
+### Demo
+![demo](demo/demo.gif)
 
 ### Questions
 

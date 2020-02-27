@@ -37,3 +37,8 @@
   color: green;
   font-size: 14px;
 }
+
+#stdout {
+  height: 600px; 
+  overflow: auto; 
+}

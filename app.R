@@ -42,8 +42,9 @@
                          style = "color: green; font-weight: bold;",
                          onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' "),
-              
+            
             verbatimTextOutput("stdout")
+            
     ),
     tabPanel("Help", 
              includeMarkdown("help.md"))
@@ -103,12 +104,15 @@
         shinyjs::html(id = "stdout", "\nPlease select a fastq folder first, then press 'Run'...\n", add = TRUE)
       } else {
         # set run button color to red?
-        shinyjs::toggleState(id = "fastpButton")
+        shinyjs::disable(id = "fastpButton")
         shinyjs::disable(id = "run")
+        # change label during run
+        shinyjs::html(id = "run", html = "Running... please wait")
         progress$set(message = "Processing... ", value = 0)
         on.exit(progress$close() )
         
       # Dean Attali's solution
+      # https://stackoverflow.com/a/30490698/8040734
         withCallingHandlers({
           shinyjs::html(id = "stdout", "")
           p <- processx::run("nextflow", 
@@ -125,7 +129,10 @@
                       error_on_status = FALSE
                       )
           }, 
-          message = function(m) {shinyjs::html(id = "stdout", html = m$message, add = TRUE)}
+            message = function(m) {
+              shinyjs::html(id = "stdout", html = m$message, add = TRUE); 
+              runjs("document.getElementById('stdout').scrollTo(0,1e9);") # scroll the page to bottom with each message, 1e9 is just a big number
+            }
         )
         if(p$status == 0) {
           
@@ -148,7 +155,7 @@
           # the next two change the text and function of the run button
           shinyjs::html(id = "run", 
                         html = sprintf("<a href='%s' target='_blank'>Show MultiQC report</a>", mqc_hash) )
-          shinyjs::show(id = "run", anim = TRUE, animType = "fade", time = 1)
+          #shinyjs::show(id = "run", anim = TRUE, animType = "fade", time = 1)
           #
           # build js callback string for shinyalert
           js_cb_string <- sprintf("function(x) { if (x == true) {window.open('%s') ;} } ", mqc_hash)
@@ -162,7 +169,7 @@
                    #callbackR = function(x) { js$openmqc(mqc_url) }
                    )
         } else {
-          shinyjs::toggleState(id = "fastpButton")
+          #shinyjs::toggleState(id = "fastpButton")
           shinyalert("Error!", type = "error", 
                      animation = "slide-from-bottom", 
                      text = "Pipeline finished with errors, press OK to reload the app and try again.", 

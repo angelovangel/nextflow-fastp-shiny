@@ -10,6 +10,7 @@
  library(processx)
  library(stringr)
  library(digest)
+ #library(shinycssloaders)
  
  
  #### ui ####
@@ -19,7 +20,7 @@
                                id = "fastpButton", # events can be listened to as input$cazytableButton in server
                                class = "action-button", #shiny needs this class def to work
                                title = "If you want to start over, just reload the page.",
-                               onMouseOver = "this.style.color='red'", # old school js
+                               onMouseOver = "this.style.color='orange'", # old school js
                                onMouseOut = "this.style.color='green'",
                                style = "color: green; font-weight: bold; border: none; background-color: inherit;"),
              
@@ -35,7 +36,11 @@
             shinyDirButton(id = "fastq_folder", label = "Select fastq folder", title = "Please select a fastq folder"),
             actionButton("run", "Run nextflow-fastp pipeline", 
                          style = "color: green; font-weight: bold;", 
-                         onMouseOver = "this.style.color = 'red' ", 
+                         onMouseOver = "this.style.color = 'orange' ", 
+                         onMouseOut = "this.style.color = 'green' "),
+            actionButton("reset", "Reset", 
+                         style = "color: green; font-weight: bold;",
+                         onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' "),
               
             verbatimTextOutput("stdout")
@@ -99,7 +104,7 @@
       } else {
         # set run button color to red?
         shinyjs::toggleState(id = "fastpButton")
-        shinyjs::hide(id = "run", anim = TRUE, animType = "fade", time = 1)
+        shinyjs::disable(id = "run")
         progress$set(message = "Processing... ", value = 0)
         on.exit(progress$close() )
         
@@ -176,7 +181,7 @@
       })
   
     #---
-  # ask to start over if title clicked
+  # ask to start over if title or reset clicked
   #----                     
   observeEvent(input$fastpButton, {
     shinyalert(title = "",
@@ -188,6 +193,16 @@
                callbackJS = "function(x) { if (x == true) {history.go(0);} }" # restart app by reloading page
                )
   })
+  observeEvent(input$reset, {
+    shinyalert(title = "",
+               type = "warning",
+               text = "Start again or stay on page?", 
+               html = TRUE, 
+               confirmButtonText = "Start again", 
+               showCancelButton = TRUE, 
+               callbackJS = "function(x) { if (x == true) {history.go(0);} }" # restart app by reloading page
+      )
+    })
    
     
  }

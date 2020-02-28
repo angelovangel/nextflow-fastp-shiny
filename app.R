@@ -33,7 +33,7 @@
             useShinyjs(),
             useShinyalert(),
             
-            shinyDirButton(id = "fastq_folder", label = "Select fastq folder", title = "Please select a fastq folder"),
+            shinyDirButton(id = "fastq_folder", label = "Select fastq folder", title = "Please select a folder with fastq files"),
             actionButton("run", "Run nextflow-fastp pipeline", 
                          style = "color: green; font-weight: bold;", 
                          onMouseOver = "this.style.color = 'orange' ", 
@@ -73,10 +73,13 @@
         cat("No fastq folder selected\n")
       } else {
         nfastq <<- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
-        shinyjs::hide("fastq_folder")
+        #shinyjs::hide("fastq_folder")
         cat(
+          "Selected folder:\n",
           parseDirPath(volumes, input$fastq_folder), "\n", 
-          nfastq, " fastq files found", sep = ""
+          "==================\n",
+          nfastq, " fastq files found", sep = "", "\n",
+          "==================\n"
         )
        }
     })
@@ -108,7 +111,7 @@
         shinyjs::disable(id = "run")
         # change label during run
         shinyjs::html(id = "run", html = "Running... please wait")
-        progress$set(message = "Processing... ", value = 0)
+        progress$set(message = "Processed ", value = 0)
         on.exit(progress$close() )
         
       # Dean Attali's solution

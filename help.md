@@ -5,7 +5,12 @@ The GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflo
 
 ### Usage
 
-Select a folder containing fastq files using the `Select fastq folder` button and press `Run nextflow-fastp pipeline`. The Shiny app will show the output of the pipeline and a link to the MultiQC report will be shown in case it finishes without errors. Results are written to the `results-fastp` folder within the fastq folder. The application can be restarted by clicking on the `Reset` button. The log files can be accessed by navigating to the fastq folder and running
+Select a folder containing fastq files using the `Select fastq folder` button and press `Run nextflow-fastp pipeline`. The Shiny app will show the output of the pipeline and a link to the MultiQC report will be shown in case it finishes without errors. Results are written to the `results-fastp` folder within the fastq folder. The application can be restarted by clicking on the `Reset` button.   
+
+<img src="demo/demo.gif" alt="drawing" width="1000"/>   
+
+
+The log files can be accessed by navigating to the fastq folder and running
 
 ```bash
 cat .nextflow.log

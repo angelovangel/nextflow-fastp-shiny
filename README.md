@@ -7,16 +7,9 @@ The GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflo
 
 ### Installation
 
-- install nextflow-fastp:
+All that is needed is [nextflow]() and this shiny app. When the app is started for the first time, the angelovangel/nextflow-fastp pipeline is pulled from github and will be available under under `$HOME/.nextflow/assets/angelovangel/nextflow-fastp/`. In case you have problems using `nextflow pull` due to proxy issues (I have), you can use `git clone` or other methods to install the pipeline.   
 
-```bash
-nextflow pull angelovangel/nextflow-fastp
-```
-
-This will install the nextflow-fastp pipeline under `$HOME/.nextflow/assets/angelovangel/nextflow-fastp/`   
-In case you have problems using `nextflow pull` due to proxy issues (I have), you can use `git clone` or other methods to install the pipeline so that it is method to 
-
-- install the Shiny app:
+To install the Shiny app:
 
 ```bash
 git clone https://github.com/angelovangel/nextflow-fastp-shiny.git
@@ -30,7 +23,7 @@ You must be familiar with Shiny server to get the app running. After that, it ca
 
 ### Usage
 
-Select a folder containing fastq files using the `Select fastq folder` button and press `Run nextflow-fastp pipeline`. The Shiny app will show the output of the pipeline and a link to the MultiQC report will be shown in case it finishes without errors. Results are written to the `results-fastp` folder within the fastq folder. The application can be restarted by clicking on the `Reset` button. The log files can be accessed by navigating to the fastq folder and running
+Select a folder containing fastq files using the `Select fastq folder` button and press `Run nextflow-fastp pipeline`. Results are written to the `results-fastp` folder within the fastq folder. The log files can be accessed by navigating to the fastq folder and running
 
 ```bash
 cat .nextflow.log

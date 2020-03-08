@@ -10,7 +10,10 @@
  library(processx)
  library(stringr)
  library(digest)
- #library(shinycssloaders)
+ library(loggit)
+ 
+ loggit::setLogFile(paste0(getwd(), "/loggit.json"))
+ users <- reactiveValues(count = 0)
  
  
  #### ui ####
@@ -53,7 +56,19 @@
  }
  #### server ####
   server <- function(input, output, session) {
+    # update user counts at each server call
+    isolate({
+      users$count <- users$count + 1
+    })
+    
+    # observe changes in users$count and write to log
+    observe({
+      loggit("INFO", log_msg = "current_users", log_detail = paste(users$count))
+    })
+    
     options(shiny.launch.browser = TRUE, shiny.error=recover)
+    #loggit_hash <- paste(as.integer(Sys.time()), digest::digest(runif(1)), sep = "_" )
+    #loggit::loggit(log_lvl = "INFO", "app_start", log_detail = loggit_hash)
     
     # generate random hash for multiqc report temp file name
     mqc_hash <- sprintf("%s_%s.html", as.integer(Sys.time()), digest::digest(runif(1)) )
@@ -188,6 +203,13 @@
     session$onSessionEnded(function() {
       # delete own mqc from www, it is meant to be temp only 
       system2("rm", args = c("-rf", paste("www/", mqc_hash, sep = "")) )
+      
+      #user management
+      isolate({
+        users$count <- users$count - 1
+      })
+      
+      loggit::loggit(log_lvl = "INFO", "app_stop", log_detail = "0")
       })
   
     #---

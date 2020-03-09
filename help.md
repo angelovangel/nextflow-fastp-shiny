@@ -1,6 +1,6 @@
 ### Background
 
-This web app is a graphical wrapper for the [nextflow-fastp](https://github.com/angelovangel/nextflow-fastp) pipeline. The app executes [fastp](https://github.com/OpenGene/fastp) on a folder containing fastq files (SE or PE Illumina reads), saves the filtered/trimmed files and generates a MultiQC report html file. The fastp program is a all-in-one tool for preprocessing FastQ files, similar to FastQC, but much faster and I think better.
+This web app is a graphical wrapper for the [nextflow-fastp](https://github.com/angelovangel/nextflow-fastp) pipeline. The app executes [fastp](https://github.com/OpenGene/fastp) on a folder containing fastq files (SE or PE Illumina reads), saves the filtered/trimmed files and generates a MultiQC report. The fastp program is a all-in-one tool for preprocessing FastQ files, similar to FastQC, but much faster and I think better.
 The GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflow pipeline using [processx](https://github.com/r-lib/processx) calls. The pipeline itself retains all the flexibility of nextflow - it can be run in a conda environment or in a docker container, the data can be local or on an Amazon S3 bucket, the executor can be local, PBS, SLURM, AWS Batch...
 
 ### Usage

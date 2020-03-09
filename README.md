@@ -2,12 +2,12 @@
 
 ### Background
 
-This web app is a graphical wrapper for the [nextflow-fastp](https://github.com/angelovangel/nextflow-fastp) pipeline. The pipeline executes [fastp](https://github.com/OpenGene/fastp) on a folder containing fastq files (SE or PE Illumina reads), saves the filtered/trimmed files in results-fastp/fastp_trimmed, and generates a MultiQC report html file (results-fastp/multiqc_report.html). The fastp program is an all-in-one tool for preprocessing FastQ files, similar to FastQC, but much faster and I think better.
-The GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflow pipeline using [processx](https://github.com/r-lib/processx) calls. The pipeline itself retains all the flexibility of nextflow - it can be run in a conda environment or in a docker container, the data can be local or on an Amazon S3 bucket, the executor can be local, PBS, SLURM, AWS Batch...
+This web app is a graphical wrapper for the [nextflow-fastp](https://github.com/angelovangel/nextflow-fastp) pipeline. The pipeline executes [fastp](https://github.com/OpenGene/fastp) on a folder containing fastq files (SE or PE Illumina reads), saves the filtered/trimmed files in results-fastp/fastp_trimmed, and generates a MultiQC report (results-fastp/multiqc_report.html). The fastp program is an all-in-one tool for preprocessing FastQ files, similar to FastQC, but much faster and I think better.
+This GUI is a [Shiny](https://shiny.rstudio.com/) app, which executes the nextflow pipeline using [processx](https://github.com/r-lib/processx) calls. The pipeline itself retains all the flexibility of nextflow - it can be run in a conda environment or in a docker container, the data can be local or on an Amazon S3 bucket, the executor can be local, PBS, SLURM, AWS Batch...
 
 ### Installation
 
-All that is needed is [nextflow]() and this shiny app. When the app is started for the first time, the angelovangel/nextflow-fastp pipeline is pulled from github and will be available under under `$HOME/.nextflow/assets/angelovangel/nextflow-fastp/`. In case you have problems using `nextflow pull` due to proxy issues (I have), you can use `git clone` or other methods to install the pipeline.   
+All that is needed is [nextflow](http://nextflow.io) and this shiny app. When the app is started for the first time, the angelovangel/nextflow-fastp pipeline is pulled from github and will be available under under `$HOME/.nextflow/assets/angelovangel/nextflow-fastp/`. In case you have problems using `nextflow pull` due to proxy issues (I have), you can use `git clone` or other methods to install the pipeline.   
 
 To install the Shiny app:
 
@@ -17,8 +17,7 @@ git clone https://github.com/angelovangel/nextflow-fastp-shiny.git
 #or, clone and run from within an R session:
 shiny::runGitHub('nextflow-fastp-shiny', 'angelovangel')
 ```
-
-You must be familiar with Shiny server to get the app running. After that, it can be accessed and used via a normal browser.   
+ 
 *Note:* the fastq folder has to be read-write accessible from the server where the app is running.
 
 ### Usage

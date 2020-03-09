@@ -108,7 +108,7 @@
     
     # callback function, to be called from run() on each chunk of output
     cb_count <- function(chunk, process) {
-      counts <- str_count(chunk, pattern = "fastp on")
+      counts <- str_count(chunk, pattern = "process > fastp")
       #print(counts)
       val <- progress$getValue() * nfastq
       progress$inc(amount = counts/nfastq,

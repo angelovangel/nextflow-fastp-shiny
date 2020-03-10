@@ -42,3 +42,7 @@
   height: 600px; 
   overflow: auto; 
 }
+
+.rightAlign {
+  float: right;
+}

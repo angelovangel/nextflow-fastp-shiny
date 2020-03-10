@@ -11,6 +11,7 @@
  library(stringr)
  library(digest)
  library(loggit)
+ library(shinyFeedback)
  
  loggit::setLogFile(paste0(getwd(), "/loggit.json"))
  users <- reactiveValues(count = 0)
@@ -33,6 +34,7 @@
     tabPanel("nextflow-fastp output",
             # attempts to use external progress bar
             includeCSS("css/customProgress.css"),
+            useShinyFeedback(),
             useShinyjs(),
             useShinyalert(),
             
@@ -45,6 +47,16 @@
                          style = "color: green; font-weight: bold;",
                          onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' "),
+            actionButton("more", "More options", class = "rightAlign"),
+            absolutePanel(top = 140, right = 20,
+                          textInput(inputId = "report_title", 
+                                    label = "Title of MultiQC report", 
+                                    value = "Summarized fastp report"),
+                          tags$hr(),
+                          checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
+                          tags$hr(),
+                          
+            ),
             
             verbatimTextOutput("stdout")
             
@@ -56,6 +68,7 @@
  }
  #### server ####
   server <- function(input, output, session) {
+    options(shiny.launch.browser = TRUE, shiny.error=recover)
     # update user counts at each server call
     isolate({
       users$count <- users$count + 1
@@ -66,9 +79,17 @@
       loggit("INFO", log_msg = "current_users", log_detail = paste(users$count))
     })
     
-    options(shiny.launch.browser = TRUE, shiny.error=recover)
-    #loggit_hash <- paste(as.integer(Sys.time()), digest::digest(runif(1)), sep = "_" )
-    #loggit::loggit(log_lvl = "INFO", "app_start", log_detail = loggit_hash)
+    # observer for optional inputs
+    hide("report_title")
+    hide("tower")
+    observeEvent(input$more, {
+      shinyjs::toggle("report_title")
+      shinyjs::toggle("tower")
+    })
+    
+    #----
+    # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
+    optional_params <- reactiveValues(tower = "")
     
     # generate random hash for multiqc report temp file name
     mqc_hash <- sprintf("%s_%s.html", as.integer(Sys.time()), digest::digest(runif(1)) )
@@ -88,14 +109,36 @@
         cat("No fastq folder selected\n")
       } else {
         nfastq <<- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
+        
+        # setup of tower optional
+        optional_params$tower <- if(input$tower) {
+          "-with-tower"
+        } else {
+          ""
+        }
+        
         #shinyjs::hide("fastq_folder")
         cat(
-          "Selected folder:\n",
-          parseDirPath(volumes, input$fastq_folder), "\n", 
-          "==================\n",
-          nfastq, " fastq files found", sep = "", "\n",
-          "==================\n"
-        )
+          " Selected folder:\n",
+          parseDirPath(volumes, input$fastq_folder), "\n",
+          "------------------\n\n",
+          
+          
+          "Number of fastq files found:\n",
+          nfastq, "\n",
+          "------------------\n\n",
+          
+          
+          "Nextflow Tower:\n",
+          input$tower, "\n",
+          "------------------\n\n",
+          
+          
+          "Nextflow command to be executed:\n",
+          "nextflow run angelovangel/fastp --runfolder", 
+            parseDirPath(volumes, input$fastq_folder), 
+            optional_params$tower, "\n",
+          "------------------\n")
        }
     })
 
@@ -138,7 +181,9 @@
                                "angelovangel/nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
                                # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
                                "--readsdir", 
-                               parseDirPath(volumes, input$fastq_folder)), 
+                               parseDirPath(volumes, input$fastq_folder),
+                               optional_params$tower),
+                      
                       wd = parseDirPath(volumes, input$fastq_folder),
                       #echo_cmd = TRUE, echo = TRUE,
                       stdout_line_callback = function(line, proc) {message(line)}, 

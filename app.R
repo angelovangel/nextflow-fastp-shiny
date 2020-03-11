@@ -57,6 +57,9 @@
                           tags$hr(),
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
+                          # the idea being - if trimmed are not needed - delete them (no changes in the nxf pipe)
+                          checkboxInput("save_trimmed", "Write fastp-trimmed files", value = TRUE),
+                          tags$hr()
                           
             )
           ),
@@ -85,9 +88,11 @@
     # observer for optional inputs
     hide("report_title")
     hide("tower")
+    hide("save_trimmed")
     observeEvent(input$more, {
       shinyjs::toggle("report_title")
       shinyjs::toggle("tower")
+      shinyjs::toggle("save_trimmed")
     })
     
     #----
@@ -203,11 +208,18 @@
         )
         if(p$status == 0) {
           
-          # clean scratch dir in case run finished ok
-          scratch_dir <- paste(parseDirPath(volumes, input$fastq_folder), "/work", sep = "")
-          system2("rm", args = c("-rf", scratch_dir) )
-          cat("deleted", scratch_dir)
+          # clean work dir in case run finished ok
+          work_dir <- paste(parseDirPath(volumes, input$fastq_folder), "/work", sep = "")
+          system2("rm", args = c("-rf", work_dir))
+          cat("deleted", work_dir, "\n")
           
+          # delete trimmed fastq files in case input$save_trimmed
+          fastp_trimm_folder <- file.path(parseDirPath(volumes, input$fastq_folder), "results-fastp/fastp_trimmed")
+          if(!input$save_trimmed) {
+            system2("rm", args = c("-rf", fastp_trimm_folder))
+            cat("deleted", fastp_trimm_folder, "\n")
+          }
+            
           # copy mqc to www/ to be able to open it, also use hash to enable multiple concurrent users
           
           mqc_report <- paste(parseDirPath(volumes, input$fastq_folder), 

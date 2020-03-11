@@ -37,13 +37,15 @@
             useShinyFeedback(),
             useShinyjs(),
             useShinyalert(),
+            shiny::uiOutput("mqc_report_button", inline = TRUE),
             
-            shinyDirButton(id = "fastq_folder", label = "Select fastq folder", title = "Please select a folder with fastq files"),
-            actionButton("run", "Run nextflow-fastp pipeline", 
+            shiny::div(id = "commands_pannel",
+              shinyDirButton(id = "fastq_folder", label = "Select fastq folder", title = "Please select a folder with fastq files"),
+              actionButton("run", "Run nextflow-fastp pipeline", 
                          style = "color: green; font-weight: bold;", 
                          onMouseOver = "this.style.color = 'orange' ", 
                          onMouseOut = "this.style.color = 'green' "),
-            actionButton("reset", "Reset", 
+              actionButton("reset", "Reset", 
                          style = "color: green; font-weight: bold;",
                          onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' "),
@@ -56,7 +58,8 @@
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
                           
-            ),
+            )
+          ),
             
             verbatimTextOutput("stdout")
             
@@ -89,6 +92,7 @@
     
     #----
     # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
+    # set TOWER_ACCESS_TOKEN in ~/.Renviron
     optional_params <- reactiveValues(tower = "")
     
     # generate random hash for multiqc report temp file name
@@ -165,9 +169,9 @@
         shinyjs::html(id = "stdout", "\nPlease select a fastq folder first, then press 'Run'...\n", add = TRUE)
       } else {
         # set run button color to red?
-        shinyjs::disable(id = "fastpButton")
-        shinyjs::disable(id = "run")
-        # change label during run
+        shinyjs::disable(id = "commands_pannel")
+       
+         # change label during run
         shinyjs::html(id = "run", html = "Running... please wait")
         progress$set(message = "Processed ", value = 0)
         on.exit(progress$close() )
@@ -212,13 +216,18 @@
            
           system2("cp", args = c(mqc_report, paste("www/", mqc_hash, sep = "")) )
           
-          # OK alert
-          shinyjs::toggleState(id = "fastpButton") # make fastpButton active again
+          # hide commands pannel, enable main button
+          shinyjs::hide(id = "commands_pannel")
+          shinyjs::enable(id = "fastp_button")
           
-          # the next two change the text and function of the run button
-          shinyjs::html(id = "run", 
-                        html = sprintf("<a href='%s' target='_blank'>Show MultiQC report</a>", mqc_hash) )
-          #shinyjs::show(id = "run", anim = TRUE, animType = "fade", time = 1)
+          # render the new action buttons to show report
+          output$mqc_report_button <- renderUI({
+            actionButton("mqc", label = "MultiQC report", 
+                         icon = icon("th"), 
+                         onclick = sprintf("window.open('%s', '_blank')", mqc_hash)
+            )
+          })
+          
           #
           # build js callback string for shinyalert
           js_cb_string <- sprintf("function(x) { if (x == true) {window.open('%s') ;} } ", mqc_hash)
@@ -232,7 +241,7 @@
                    #callbackR = function(x) { js$openmqc(mqc_url) }
                    )
         } else {
-          #shinyjs::toggleState(id = "fastpButton")
+          shinyjs::enable(id = "commands_pannel")
           shinyalert("Error!", type = "error", 
                      animation = "slide-from-bottom", 
                      text = "Pipeline finished with errors, press OK to reload the app and try again.", 

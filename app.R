@@ -58,7 +58,7 @@
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
                           # the idea being - if trimmed are not needed - delete them (no changes in the nxf pipe)
-                          checkboxInput("save_trimmed", "Write fastp-trimmed files", value = TRUE),
+                          checkboxInput("save_trimmed", "Save fastp-trimmed files?", value = TRUE),
                           tags$hr()
                           
             )
@@ -95,6 +95,13 @@
       shinyjs::toggle("save_trimmed")
     })
     
+    # shinyFeeback observer
+    observeEvent(input$report_title, {
+      feedbackWarning(inputId = "report_title", 
+                      condition = nchar(input$report_title) <= 3, 
+                      text = "too short")
+    })
+    
     #----
     # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
     # set TOWER_ACCESS_TOKEN in ~/.Renviron
@@ -117,7 +124,7 @@
       if (is.integer(input$fastq_folder)) {
         cat("No fastq folder selected\n")
       } else {
-        nfastq <<- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
+        nfastq <- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
         
         # setup of tower optional
         optional_params$tower <- if(input$tower) {
@@ -221,7 +228,6 @@
           }
             
           # copy mqc to www/ to be able to open it, also use hash to enable multiple concurrent users
-          
           mqc_report <- paste(parseDirPath(volumes, input$fastq_folder), 
                            "/results-fastp/multiqc_report.html", # make sure the nextflow-fastp pipeline writes to "results-fastp"
                            sep = "")
@@ -229,8 +235,7 @@
           system2("cp", args = c(mqc_report, paste("www/", mqc_hash, sep = "")) )
           
           # hide commands pannel, enable main button
-          shinyjs::hide(id = "commands_pannel")
-          shinyjs::enable(id = "fastp_button")
+          shinyjs::hide(id = "command_pannel")
           
           # render the new action buttons to show report
           output$mqc_report_button <- renderUI({
@@ -253,7 +258,9 @@
                    #callbackR = function(x) { js$openmqc(mqc_url) }
                    )
         } else {
+          shinyjs::html(id = "run", html = "Finished with errors")
           shinyjs::enable(id = "commands_pannel")
+          shinyjs::disable(id = "run")
           shinyalert("Error!", type = "error", 
                      animation = "slide-from-bottom", 
                      text = "Pipeline finished with errors, press OK to reload the app and try again.", 

@@ -281,6 +281,7 @@
       #user management
       isolate({
         users$count <- users$count - 1
+        writeLines(as.character(users$count), con = "userlog")
       })
       
     })

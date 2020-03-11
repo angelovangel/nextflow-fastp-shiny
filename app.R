@@ -10,10 +10,10 @@
  library(processx)
  library(stringr)
  library(digest)
- library(loggit)
+ #library(loggit)
  library(shinyFeedback)
  
- loggit::setLogFile(paste0(getwd(), "/loggit.json"))
+ # define reactive to track user counts
  users <- reactiveValues(count = 0)
  
  
@@ -75,14 +75,15 @@
  #### server ####
   server <- function(input, output, session) {
     options(shiny.launch.browser = TRUE, shiny.error=recover)
+    
     # update user counts at each server call
     isolate({
       users$count <- users$count + 1
     })
     
-    # observe changes in users$count and write to log
+    # observe changes in users$count and write to log, observers use eager eval
     observe({
-      loggit("INFO", log_msg = "current_users", log_detail = paste(users$count))
+      writeLines(as.character(users$count), con = "userlog")
     })
     
     # observer for optional inputs
@@ -98,7 +99,7 @@
     # shinyFeeback observer
     observeEvent(input$report_title, {
       feedbackWarning(inputId = "report_title", 
-                      condition = nchar(input$report_title) <= 3, 
+                      condition = nchar(input$report_title) <= 5, 
                       text = "too short")
     })
     
@@ -282,8 +283,7 @@
         users$count <- users$count - 1
       })
       
-      loggit::loggit(log_lvl = "INFO", "app_stop", log_detail = "0")
-      })
+    })
   
     #---
   # ask to start over if title or reset clicked
@@ -305,6 +305,7 @@
                html = TRUE, 
                confirmButtonText = "Start again", 
                showCancelButton = TRUE, 
+               # actually, session$reload() as an R callback should also work
                callbackJS = "function(x) { if (x == true) {history.go(0);} }" # restart app by reloading page
       )
     })

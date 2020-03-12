@@ -125,7 +125,7 @@
       if (is.integer(input$fastq_folder)) {
         cat("No fastq folder selected\n")
       } else {
-        nfastq <- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
+        nfastq <<- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
         
         # setup of tower optional
         optional_params$tower <- if(input$tower) {
@@ -215,6 +215,8 @@
             }
         )
         if(p$status == 0) {
+          # hide command pannel 
+          shinyjs::hide("commands_pannel")
           
           # clean work dir in case run finished ok
           work_dir <- paste(parseDirPath(volumes, input$fastq_folder), "/work", sep = "")
@@ -235,8 +237,6 @@
            
           system2("cp", args = c(mqc_report, paste("www/", mqc_hash, sep = "")) )
           
-          # hide commands pannel, enable main button
-          shinyjs::hide(id = "command_pannel")
           
           # render the new action buttons to show report
           output$mqc_report_button <- renderUI({

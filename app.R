@@ -50,10 +50,17 @@
                          onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' "),
             actionButton("more", "More options", class = "rightAlign"),
-            absolutePanel(top = 140, right = 20,
+            tags$div(id = "optional_inputs",
+              absolutePanel(top = 140, right = 20,
                           textInput(inputId = "report_title", 
                                     label = "Title of MultiQC report", 
                                     value = "Summarized fastp report"),
+                          tags$hr(),
+                          selectizeInput("nxf_profile", 
+                                         label = "Select nextflow profile", 
+                                         choices = c("docker", "conda"), 
+                                         selected = "docker", 
+                                         multiple = FALSE),
                           tags$hr(),
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
@@ -61,6 +68,7 @@
                           checkboxInput("save_trimmed", "Save fastp-trimmed files?", value = TRUE),
                           tags$hr()
                           
+              )
             )
           ),
             
@@ -87,21 +95,19 @@
     })
     
     # observer for optional inputs
-    hide("report_title")
-    hide("tower")
-    hide("save_trimmed")
+    hide("optional_inputs")
     observeEvent(input$more, {
-      shinyjs::toggle("report_title")
-      shinyjs::toggle("tower")
-      shinyjs::toggle("save_trimmed")
+      shinyjs::toggle("optional_inputs")
     })
     
-    # shinyFeeback observer
+    # shinyFeeback observers
+    # title too short?
     observeEvent(input$report_title, {
       feedbackWarning(inputId = "report_title", 
-                      condition = nchar(input$report_title) <= 5, 
-                      text = "too short")
+                      condition = nchar(input$report_title) <= 10, 
+                      text = "title too short?")
     })
+
     
     #----
     # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
@@ -153,7 +159,9 @@
           
           "Nextflow command to be executed:\n",
           "nextflow run angelovangel/fastp --runfolder", 
-            parseDirPath(volumes, input$fastq_folder), 
+          parseDirPath(volumes, input$fastq_folder), 
+          "-profile", 
+          input$nxf_profile,
             optional_params$tower, "\n",
           "------------------\n")
        }
@@ -198,7 +206,9 @@
                                "angelovangel/nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
                                # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
                                "--readsdir", 
-                               parseDirPath(volumes, input$fastq_folder), "-profile", "docker",
+                               parseDirPath(volumes, input$fastq_folder), 
+                               "-profile", 
+                               input$nxf_profile,
                                optional_params$tower),
                       
                       wd = parseDirPath(volumes, input$fastq_folder),

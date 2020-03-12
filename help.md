@@ -6,10 +6,6 @@ This web app is a graphical interface for the [nextflow-fastp](https://github.co
 
 Select a folder containing fastq files using the `Select fastq folder` button and press `Run nextflow-fastp pipeline`. Results are written to the `results-fastp` folder within the fastq folder.
 
-<img src="demo/demo.gif" alt="drawing" width="1000"/>   
-
-
-
 The log files can be accessed by navigating to the fastq folder and running
 
 ```bash

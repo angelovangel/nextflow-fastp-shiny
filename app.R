@@ -10,11 +10,15 @@
  library(processx)
  library(stringr)
  library(digest)
- #library(loggit)
+ library(yaml)
  library(shinyFeedback)
+ library(pingr) # to check if server has internet
  
  # define reactive to track user counts
  users <- reactiveValues(count = 0)
+ 
+ source("ncct_modal.R", local = FALSE)$value # don't share across sessions, who knows what could happen!
+ source("ncct_make_yaml.R")
  
  
  #### ui ####
@@ -82,6 +86,8 @@
                                          selected = "docker", 
                                          multiple = FALSE),
                           tags$hr(),
+                          actionButton("ncct", "Enter NCCT project info"),
+                          tags$hr(),
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
                           # the idea being - if trimmed are not needed - delete them (no changes in the nxf pipe)
@@ -103,6 +109,11 @@
  #### server ####
   server <- function(input, output, session) {
     options(shiny.launch.browser = TRUE, shiny.error=recover)
+    
+    #----
+    # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
+    # set TOWER_ACCESS_TOKEN in ~/.Renviron
+    optional_params <- reactiveValues(tower = "", mqc = "")
     
     # update user counts at each server call
     isolate({
@@ -139,12 +150,44 @@
         showSnackbar("fastp_trimmed")
       }
     })
-
     
     #----
-    # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
-    # set TOWER_ACCESS_TOKEN in ~/.Renviron
-    optional_params <- reactiveValues(tower = "")
+    # strategy for ncct modal and multiqc config file handling:
+    # if input$ncct_ok is clicked, the modal inputs are fed into the ncct_make_yaml() function, which generates
+    # a multiqc_config.yml file and saves it using tempfile()
+    # initially, the reactive value mqc_config$rv is set to "", if input$ncct_ok then it is set to
+    # c("--multiqc_config", mqc_config_temp) and this reactive is given as param to the nxf pipeline
+    
+    # observer to generate ncct modal
+    observeEvent(input$ncct, {
+      if(pingr::is_online()) {
+        ncct_modal_entries <- yaml::yaml.load_file("https://gist.githubusercontent.com/angelovangel/d079296b184eba5b124c1d434276fa28/raw/ncct_modal_entries")
+        showModal( ncct_modal(ncct_modal_entries) )
+      } else {
+        shinyalert("No internet!", 
+                   text = "This feature requires internet connection", 
+                   type = "warning")
+      }
+      
+    })
+    
+    # generate yml file in case OK of modal was pressed
+    # the yml file is generated in the app exec env, using temp()
+    observeEvent(input$ncct_ok, {
+      mqc_config_temp <- tempfile()
+      optional_params$mqc <- c("--multiqc_config", mqc_config_temp) 
+      ncct_make_yaml(customer = input$customer, 
+                     project_id = input$project_id, 
+                     ncct_contact = input$ncct_contact, 
+                     project_type = input$project_type, 
+                     lib_prep = input$lib_prep, 
+                     indexing = input$indexing, 
+                     seq_setup = input$seq_setup, 
+                     ymlfile = mqc_config_temp)
+      shinyalert(text = "Project info saved!", type = "info", timer = 1500, showConfirmButton = FALSE)
+      removeModal()
+    })
+    
     
     # generate random hash for multiqc report temp file name
     mqc_hash <- sprintf("%s_%s.html", as.integer(Sys.time()), digest::digest(runif(1)) )
@@ -191,10 +234,12 @@
           
           "Nextflow command to be executed:\n",
           "nextflow run angelovangel/fastp --runfolder", 
-          parseDirPath(volumes, input$fastq_folder), 
+          parseDirPath(volumes, input$fastq_folder), "\\ \n",
           "-profile", 
-          input$nxf_profile,
-            optional_params$tower, "\n",
+          input$nxf_profile, "\\ \n",
+          optional_params$tower,
+          optional_params$mqc, "\n",
+          
           "------------------\n")
        }
     })
@@ -240,7 +285,8 @@
                                "--readsdir", 
                                parseDirPath(volumes, input$fastq_folder), 
                                "-profile", 
-                               input$nxf_profile,
+                               input$nxf_profile, 
+                               optional_params$mqc,
                                optional_params$tower),
                       
                       wd = parseDirPath(volumes, input$fastq_folder),

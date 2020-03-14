@@ -36,7 +36,15 @@
             includeCSS("css/customProgress.css"),
             useShinyFeedback(),
             useShinyjs(),
-            useShinyalert(),
+            useShinyalert(), 
+            
+            # snackbars begin
+            snackbarWarning(id = "tower_snackbar", 
+                            message = "Is TOWER_ACCESS_TOKEN available in Sys.getenv() ?"),
+            snackbarSuccess("fastp_trimmed", 
+                            message = "Default fastp parameters will be used"),
+            # snackbars end
+            
             shiny::uiOutput("mqc_report_button", inline = TRUE),
             
             shiny::div(id = "commands_pannel",
@@ -54,7 +62,14 @@
                          onMouseOver = "this.style.color = 'orange' ",
                          onMouseOut = "this.style.color = 'green' ", 
                          icon = icon("redo")),
-            actionButton("more", "More options", class = "rightAlign"),
+            
+            actionButton("more", "More options", 
+                         icon = icon("caret-square-down"),
+                         class = "rightAlign"),
+            actionButton("landing_page", "Go to home page", 
+                         icon = icon("home"),
+                         class = "rightAlign", 
+                         onclick ="window.open('http://google.com', '_blank')"),
             tags$div(id = "optional_inputs",
               absolutePanel(top = 140, right = 20,
                           textInput(inputId = "report_title", 
@@ -70,7 +85,7 @@
                           checkboxInput("tower", "Use Nextflow Tower to monitor run", value = FALSE),
                           tags$hr(),
                           # the idea being - if trimmed are not needed - delete them (no changes in the nxf pipe)
-                          checkboxInput("save_trimmed", "Save fastp-trimmed files?", value = TRUE),
+                          checkboxInput("save_trimmed", "Save fastp-trimmed files?", value = FALSE),
                           tags$hr()
                           
               )
@@ -111,6 +126,18 @@
       feedbackWarning(inputId = "report_title", 
                       condition = nchar(input$report_title) <= 10, 
                       text = "title too short?")
+    })
+    
+    observe({
+      if(input$tower) {
+      showSnackbar("tower_snackbar")
+      }
+    })
+    
+    observe({
+      if(input$save_trimmed) {
+        showSnackbar("fastp_trimmed")
+      }
     })
 
     

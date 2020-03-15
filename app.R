@@ -54,6 +54,7 @@
             shiny::div(id = "commands_pannel",
               shinyDirButton(id = "fastq_folder", 
                              label = "Select fastq folder", 
+                             style = "color: #3498DB; font-weight: bold;", 
                              title = "Please select a folder with fastq files", 
                              icon = icon("folder-open")),
               actionButton("run", "Run nextflow-fastp pipeline", 

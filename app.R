@@ -37,7 +37,7 @@
     
     tabPanel("nextflow-fastp output",
             # attempts to use external progress bar
-            includeCSS("css/customProgress.css"),
+            includeCSS("css/custom.css"),
             useShinyFeedback(),
             useShinyjs(),
             useShinyalert(), 
@@ -68,7 +68,7 @@
                          icon = icon("redo")),
             
             actionButton("more", "More options", 
-                         icon = icon("caret-square-down"),
+                         icon = icon("cog"),
                          class = "rightAlign"),
             actionButton("landing_page", "Go to home page", 
                          icon = icon("home"),
@@ -136,7 +136,7 @@
     observeEvent(input$report_title, {
       feedbackWarning(inputId = "report_title", 
                       condition = nchar(input$report_title) <= 10, 
-                      text = "title too short?")
+                      text = "Title too short?")
     })
     
     observe({

@@ -46,3 +46,7 @@
 .rightAlign {
   float: right;
 }
+
+.yellow {
+  background: #F9E79F;
+}

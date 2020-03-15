@@ -227,17 +227,12 @@
           "------------------\n\n",
           
           
-          "Nextflow Tower:\n",
-          input$tower, "\n",
-          "------------------\n\n",
-          
-          
           "Nextflow command to be executed:\n",
-          "nextflow run angelovangel/fastp --runfolder", 
+          "nextflow run angelovangel/fastp", "\\ \n",
+          "--runfolder", 
           parseDirPath(volumes, input$fastq_folder), "\\ \n",
           "-profile", 
-          input$nxf_profile, "\\ \n",
-          optional_params$tower,
+          input$nxf_profile, optional_params$tower, "\\ \n",
           optional_params$mqc, "\n",
           
           "------------------\n")

@@ -11,7 +11,7 @@
  library(stringr)
  library(digest)
  library(yaml)
- library(shinyFeedback)
+ #library(shinyFeedback)
  library(pingr) # to check if server has internet
  
  # define reactive to track user counts
@@ -38,15 +38,15 @@
     tabPanel("nextflow-fastp output",
             # attempts to use external progress bar
             includeCSS("css/custom.css"),
-            useShinyFeedback(),
+            #useShinyFeedback(),
             useShinyjs(),
             useShinyalert(), 
             
             # snackbars begin
-            snackbarWarning(id = "tower_snackbar", 
-                            message = "Is TOWER_ACCESS_TOKEN available in Sys.getenv() ?"),
-            snackbarSuccess("fastp_trimmed", 
-                            message = "Default fastp parameters will be used"),
+            # snackbarWarning(id = "tower_snackbar", 
+            #                 message = "Is TOWER_ACCESS_TOKEN available in Sys.getenv() ?"),
+            # snackbarSuccess("fastp_trimmed", 
+            #                 message = "Default fastp parameters will be used"),
             # snackbars end
             
             shiny::uiOutput("mqc_report_button", inline = TRUE),
@@ -134,23 +134,23 @@
     
     # shinyFeeback observers
     # title too short?
-    observeEvent(input$report_title, {
-      feedbackWarning(inputId = "report_title", 
-                      condition = nchar(input$report_title) <= 10, 
-                      text = "Title too short?")
-    })
+    # observeEvent(input$report_title, {
+    #   feedbackWarning(inputId = "report_title", 
+    #                   condition = nchar(input$report_title) <= 10, 
+    #                   text = "Title too short?")
+    # })
     
-    observe({
-      if(input$tower) {
-      showSnackbar("tower_snackbar")
-      }
-    })
-    
-    observe({
-      if(input$save_trimmed) {
-        showSnackbar("fastp_trimmed")
-      }
-    })
+    # observe({
+    #   if(input$tower) {
+    #   showSnackbar("tower_snackbar")
+    #   }
+    # })
+    # 
+    # observe({
+    #   if(input$save_trimmed) {
+    #     showSnackbar("fastp_trimmed")
+    #   }
+    # })
     
     #----
     # strategy for ncct modal and multiqc config file handling:

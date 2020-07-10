@@ -50,6 +50,7 @@
             # snackbars end
             
             shiny::uiOutput("mqc_report_button", inline = TRUE),
+            shiny::uiOutput("nxf_report_button", inline = TRUE),
             
             shiny::div(id = "commands_pannel",
               shinyDirButton(id = "fastq_folder", 
@@ -190,8 +191,9 @@
     })
     
     
-    # generate random hash for multiqc report temp file name
+    # generate random hashes for multiqc report and nxf temp file names
     mqc_hash <- sprintf("%s_%s.html", as.integer(Sys.time()), digest::digest(runif(1)) )
+    nxf_hash <- sprintf("%s_%s.html", as.integer(Sys.time()), digest::digest(runif(1)) )
     
     # dir choose management --------------------------------------
     volumes <- c(Home = fs::path_home(), getVolumes()() )
@@ -232,10 +234,9 @@
           "nextflow run angelovangel/fastp", "\\ \n",
           "--runfolder", 
           parseDirPath(volumes, input$fastq_folder), "\\ \n",
-          "-profile", 
-          input$nxf_profile, optional_params$tower, "\\ \n",
+          "-profile", input$nxf_profile, optional_params$tower, "\\ \n",
+          "-with-report", paste(parseDirPath(volumes, input$fastq_folder), "/nxf_workflow_report.html", sep = ""), "\\ \n",
           optional_params$mqc, "\n",
-          
           "------------------\n")
        }
     })
@@ -280,10 +281,11 @@
                                # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
                                "--readsdir", 
                                parseDirPath(volumes, input$fastq_folder), 
-                               "-profile", 
-                               input$nxf_profile, 
-                               optional_params$mqc,
-                               optional_params$tower),
+                               "-profile", input$nxf_profile, 
+                               optional_params$tower,
+                               "-with-report", paste(parseDirPath(volumes, input$fastq_folder), "/results-fastp/nxf_workflow_report.html", sep = ""),
+                               optional_params$mqc
+                               ),
                       
                       wd = parseDirPath(volumes, input$fastq_folder),
                       #echo_cmd = TRUE, echo = TRUE,
@@ -314,12 +316,15 @@
             cat("deleted", fastp_trimm_folder, "\n")
           }
             
-          # copy mqc to www/ to be able to open it, also use hash to enable multiple concurrent users
+          # copy mqc and nxf reports to www/ to be able to open, also use hash to enable multiple concurrent users
           mqc_report <- paste(parseDirPath(volumes, input$fastq_folder), 
                            "/results-fastp/multiqc_report.html", # make sure the nextflow-fastp pipeline writes to "results-fastp"
                            sep = "")
+          nxf_report <- paste(parseDirPath(volumes, input$fastq_folder), 
+                              "/results-fastp/nxf_workflow_report.html", sep = "")
            
           system2("cp", args = c(mqc_report, paste("www/", mqc_hash, sep = "")) )
+          system2("cp", args = c(nxf_report, paste("www/", nxf_hash, sep = "")) )
           
           
           # render the new action buttons to show report
@@ -327,6 +332,13 @@
             actionButton("mqc", label = "MultiQC report", 
                          icon = icon("th"), 
                          onclick = sprintf("window.open('%s', '_blank')", mqc_hash)
+            )
+          })
+          # render the new nxf report button
+          output$nxf_report_button <- renderUI({
+            actionButton("nxf", label = "Nextflow execution report", 
+                         icon = icon("th"), 
+                         onclick = sprintf("window.open('%s', '_blank')", nxf_hash)
             )
           })
           

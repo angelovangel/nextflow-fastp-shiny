@@ -8,10 +8,11 @@
  library(shinyjs)
  library(shinyalert)
  library(processx)
+ library(parallel)
  library(stringr)
  library(digest)
  library(yaml)
- #library(shinyFeedback)
+ library(shinypop)
  library(pingr) # to check if server has internet
  
  # define reactive to track user counts
@@ -41,13 +42,7 @@
             #useShinyFeedback(),
             useShinyjs(),
             useShinyalert(), 
-            
-            # snackbars begin
-            # snackbarWarning(id = "tower_snackbar", 
-            #                 message = "Is TOWER_ACCESS_TOKEN available in Sys.getenv() ?"),
-            # snackbarSuccess("fastp_trimmed", 
-            #                 message = "Default fastp parameters will be used"),
-            # snackbars end
+            use_notiflix_notify(position = "left-bottom", width = "380px"),
             
             shiny::uiOutput("mqc_report_button", inline = TRUE),
             shiny::uiOutput("nxf_report_button", inline = TRUE),
@@ -118,6 +113,11 @@
  #### server ####
   server <- function(input, output, session) {
     options(shiny.launch.browser = TRUE, shiny.error=recover)
+    ncores <- parallel::detectCores() # use for info only
+    
+    nx_notify_success(paste("Hello ", Sys.getenv("LOGNAME"), 
+                            "! There are ", ncores, " cores available.", sep = "")
+                      )
     
     #----
     # reactive for optional params for nxf, so far only -with-tower, but others may be implemented here
@@ -142,13 +142,17 @@
     
     observe({
       if(input$tower) {
-      showNotification("Nextflow Tower will be used for monitoring", type = "message")
+        # setup of tower optional
+        optional_params$tower <- "-with-tower"
+        #shiny::showNotification("Make sure TOWER_ACCESS_TOKEN is in your environment")
+      } else {
+        optional_params$tower <- ""
       }
     })
     # 
     observe({
       if(input$save_trimmed) {
-        showNotification("fastp-trimmed files will be saved", type = "message")
+        nx_notify_success("fastp-trimmed files will be saved")
       }
     })
     
@@ -185,7 +189,7 @@
                      indexing = input$indexing, 
                      seq_setup = input$seq_setup, 
                      ymlfile = mqc_config_temp)
-      shinyalert(text = "Project info saved!", type = "info", timer = 1500, showConfirmButton = FALSE)
+      nx_notify_success(text = "Project info saved!")
       removeModal()
     })
     
@@ -207,6 +211,7 @@
     #-----------------------------------
     
     output$stdout <- renderPrint({
+      
       # show currently selected fastq folder (and count fastq files there)
       if (is.integer(input$fastq_folder)) {
         cat("No fastq folder selected\n")
@@ -216,17 +221,11 @@
         nfastq <<- length(list.files(path = selectedFolder, pattern = "*fast(q|q.gz)$"))
         
         if(nfastq > 0) {
-          showNotification(paste(nfastq, "files found"), type = "message")
+          nx_notify_success(paste(nfastq, "files found"))
         } else {
-          showNotification("No fastq files found in folder!\nSelect another or check fastq name pattern", type = "error")
+          nx_notify_warning("No fastq files found in folder!\nSelect another or check fastq name pattern")
         }
         
-        # setup of tower optional
-        optional_params$tower <- if(input$tower) {
-          "-with-tower"
-        } else {
-          ""
-        }
         
         # set mxf args here, use in cat as well as in real processx call
         nxf_args <<- c("run" ,"angelovangel/nextflow-fastp",
@@ -273,15 +272,15 @@
     observeEvent(input$run, {
       if(is.integer(input$fastq_folder)) {
         shinyjs::html(id = "stdout", "\nPlease select a fastq folder first, then press 'Run'...\n", add = TRUE)
-        shiny::showNotification("Please select a fastq folder first!", type = "error")
+        nx_notify_error("Please select a fastq folder first!")
       
       } else if (nfastq == 0) {
-        shiny::showNotification("No fastq files found in folder!\nSelect another or check fastq name pattern", type = "error")
+        nx_notify_error("No fastq files found in folder!\nSelect another folder or check fastq name pattern")
       
       } else {
         # set run button color to red?
         shinyjs::disable(id = "commands_pannel")
-       
+        nx_notify_success("Looks good, starting run...")
          # change label during run
         shinyjs::html(id = "run", html = "Running... please wait")
         progress$set(message = "Processed ", value = 0)
@@ -315,10 +314,10 @@
           
           rmwork <- system2("rm", args = c("-rf", work_dir))
           if(rmwork == 0) {
-            shiny::showNotification("Temp work directory deleted", type = "message")
+            nx_notify_success("Temp work directory deleted")
             cat("deleted", work_dir, "\n")
           } else {
-            shiny::showNotification("Could not delete temp work directory!", type = "error")
+            nx_notify_warning("Could not delete temp work directory!")
           }
           
           # delete trimmed fastq files in case input$save_trimmed

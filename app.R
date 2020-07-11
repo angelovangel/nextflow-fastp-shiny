@@ -268,6 +268,11 @@
     observeEvent(input$run, {
       if(is.integer(input$fastq_folder)) {
         shinyjs::html(id = "stdout", "\nPlease select a fastq folder first, then press 'Run'...\n", add = TRUE)
+        shiny::showNotification("Please select a fastq folder first!", type = "error")
+      
+      } else if (nfastq == 0) {
+        shiny::showNotification("No fastq files found in folder!\nSelect another or check fastq name pattern", type = "error")
+      
       } else {
         # set run button color to red?
         shinyjs::disable(id = "commands_pannel")
@@ -302,9 +307,14 @@
           
           # clean work dir in case run finished ok
           work_dir <- paste(selectedFolder, "/work", sep = "")
-          system2("rm", args = c("-rf", work_dir))
-          shiny::showNotification("Temporary work directory deleted", type = "message")
-          cat("deleted", work_dir, "\n")
+          
+          rmwork <- system2("rm", args = c("-rf", work_dir))
+          if(rmwork == 0) {
+            shiny::showNotification("Temp work directory deleted", type = "message")
+            cat("deleted", work_dir, "\n")
+          } else {
+            shiny::showNotification("Could not delete temp work directory!", type = "error")
+          }
           
           # delete trimmed fastq files in case input$save_trimmed
           fastp_trimm_folder <- file.path(selectedFolder, "results-fastp/fastp_trimmed")

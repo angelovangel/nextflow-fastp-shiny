@@ -83,6 +83,12 @@
                                     label = "Title of MultiQC report", 
                                     value = "Summarized fastp report"),
                           tags$hr(),
+                          
+                          textInput(inputId = "fqpattern", 
+                                    label = "Fastq reads pattern", 
+                                    value = "*R{1,2}_001.fastq.gz"),
+                          tags$hr(),
+                          
                           selectizeInput("nxf_profile", 
                                          label = "Select nextflow profile", 
                                          choices = c("docker", "conda"), 
@@ -134,25 +140,17 @@
       shinyjs::toggle("optional_inputs")
     })
     
-    # shinyFeeback observers
-    # title too short?
-    # observeEvent(input$report_title, {
-    #   feedbackWarning(inputId = "report_title", 
-    #                   condition = nchar(input$report_title) <= 10, 
-    #                   text = "Title too short?")
-    # })
-    
-    # observe({
-    #   if(input$tower) {
-    #   showSnackbar("tower_snackbar")
-    #   }
-    # })
+    observe({
+      if(input$tower) {
+      showNotification("Nextflow Tower will be used for monitoring", type = "message")
+      }
+    })
     # 
-    # observe({
-    #   if(input$save_trimmed) {
-    #     showSnackbar("fastp_trimmed")
-    #   }
-    # })
+    observe({
+      if(input$save_trimmed) {
+        showNotification("fastp-trimmed files will be saved", type = "message")
+      }
+    })
     
     #----
     # strategy for ncct modal and multiqc config file handling:
@@ -217,6 +215,12 @@
         selectedFolder <<- parseDirPath(volumes, input$fastq_folder)
         nfastq <<- length(list.files(path = selectedFolder, pattern = "*fast(q|q.gz)$"))
         
+        if(nfastq > 0) {
+          showNotification(paste(nfastq, "files found"), type = "message")
+        } else {
+          showNotification("No fastq files found in folder!\nSelect another or check fastq name pattern", type = "error")
+        }
+        
         # setup of tower optional
         optional_params$tower <- if(input$tower) {
           "-with-tower"
@@ -227,6 +231,7 @@
         # set mxf args here, use in cat as well as in real processx call
         nxf_args <<- c("run" ,"angelovangel/nextflow-fastp",
                        "--readsdir", selectedFolder, 
+                       "--fqpattern", input$fqpattern,
                        "-profile", input$nxf_profile, 
                        optional_params$tower,
                        "-with-report", paste(selectedFolder, "/nxf_workflow_report.html", sep = ""),

@@ -204,13 +204,16 @@
                    restrictions = system.file(package = "base")) 
     
     #-----------------------------------
-    # show currently selected fastq folder (and count fastq files there)
+    # The main work of setting args for the nxf call is done here
+    # in case the reactive vals are "", then they are not used by nxf
+    #-----------------------------------
     
     output$stdout <- renderPrint({
+      # show currently selected fastq folder (and count fastq files there)
       if (is.integer(input$fastq_folder)) {
         cat("No fastq folder selected\n")
       } else {
-        # hard set fastq folder
+      # hard set fastq folder
         selectedFolder <<- parseDirPath(volumes, input$fastq_folder)
         nfastq <<- length(list.files(path = selectedFolder, pattern = "*fast(q|q.gz)$"))
         
@@ -221,7 +224,14 @@
           ""
         }
         
-        #shinyjs::hide("fastq_folder")
+        # set mxf args here, use in cat as well as in real processx call
+        nxf_args <<- c("run" ,"angelovangel/nextflow-fastp",
+                       "--readsdir", selectedFolder, 
+                       "-profile", input$nxf_profile, 
+                       optional_params$tower,
+                       "-with-report", paste(selectedFolder, "/nxf_workflow_report.html", sep = ""),
+                       optional_params$mqc)
+        
         cat(
           " Selected folder:\n",
           selectedFolder, "\n",
@@ -230,17 +240,10 @@
           
           "Number of fastq files found:\n",
           nfastq, "\n",
-          "------------------\n\n",
-          
-          
-          "Nextflow command to be executed:\n",
-          "nextflow run angelovangel/fastp", "\\ \n",
-          "--runfolder", 
-          selectedFolder, "\\ \n",
-          "-profile", input$nxf_profile, optional_params$tower, "\\ \n",
-          "-with-report", paste(selectedFolder, "/nxf_workflow_report.html", sep = ""), "\\ \n",
-          optional_params$mqc, "\n",
-          "------------------\n")
+          "------------------\n\n")
+        
+        cat(" Nextflow command to be executed:\n\n",
+            "nextflow", nxf_args)
        }
     })
 
@@ -279,20 +282,10 @@
         withCallingHandlers({
           shinyjs::html(id = "stdout", "")
           p <- processx::run("nextflow", 
-                      args = c("run" ,
-                               "angelovangel/nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
-                               # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
-                               "--readsdir", 
-                               selectedFolder, 
-                               "-profile", input$nxf_profile, 
-                               optional_params$tower,
-                               "-with-report", paste(selectedFolder, "/results-fastp/nxf_workflow_report.html", sep = ""),
-                               optional_params$mqc
-                               ),
-                      
+                      args = nxf_args,
                       wd = selectedFolder,
                       #echo_cmd = TRUE, echo = TRUE,
-                      stdout_line_callback = function(line, proc) {message(line)}, 
+                      stdout_line_callback = function(line, proc) { message(line) }, 
                       stdout_callback = cb_count,
                       stderr_to_stdout = TRUE, 
                       error_on_status = FALSE
@@ -392,7 +385,7 @@
         users$count <- users$count - 1
         writeLines(as.character(users$count), con = "userlog")
       })
-      stopApp()
+      #stopApp()
     })
   
     #---

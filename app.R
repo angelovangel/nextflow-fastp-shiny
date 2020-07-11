@@ -51,6 +51,7 @@
             
             shiny::uiOutput("mqc_report_button", inline = TRUE),
             shiny::uiOutput("nxf_report_button", inline = TRUE),
+            shiny::uiOutput("outputFilesLocation", inline = TRUE),
             
             shiny::div(id = "commands_pannel",
               shinyDirButton(id = "fastq_folder", 
@@ -209,7 +210,9 @@
       if (is.integer(input$fastq_folder)) {
         cat("No fastq folder selected\n")
       } else {
-        nfastq <<- length(list.files(path = parseDirPath(volumes, input$fastq_folder), pattern = "*fast(q|q.gz)$"))
+        # hard set fastq folder
+        selectedFolder <<- parseDirPath(volumes, input$fastq_folder)
+        nfastq <<- length(list.files(path = selectedFolder, pattern = "*fast(q|q.gz)$"))
         
         # setup of tower optional
         optional_params$tower <- if(input$tower) {
@@ -221,7 +224,7 @@
         #shinyjs::hide("fastq_folder")
         cat(
           " Selected folder:\n",
-          parseDirPath(volumes, input$fastq_folder), "\n",
+          selectedFolder, "\n",
           "------------------\n\n",
           
           
@@ -233,9 +236,9 @@
           "Nextflow command to be executed:\n",
           "nextflow run angelovangel/fastp", "\\ \n",
           "--runfolder", 
-          parseDirPath(volumes, input$fastq_folder), "\\ \n",
+          selectedFolder, "\\ \n",
           "-profile", input$nxf_profile, optional_params$tower, "\\ \n",
-          "-with-report", paste(parseDirPath(volumes, input$fastq_folder), "/nxf_workflow_report.html", sep = ""), "\\ \n",
+          "-with-report", paste(selectedFolder, "/nxf_workflow_report.html", sep = ""), "\\ \n",
           optional_params$mqc, "\n",
           "------------------\n")
        }
@@ -280,14 +283,14 @@
                                "angelovangel/nextflow-fastp", # in case it is pulled before with nextflow pull and is in ~/.nextflow
                                # fs::path_abs("nextflow-fastp/main.nf"), # absolute path to avoid pulling from github
                                "--readsdir", 
-                               parseDirPath(volumes, input$fastq_folder), 
+                               selectedFolder, 
                                "-profile", input$nxf_profile, 
                                optional_params$tower,
-                               "-with-report", paste(parseDirPath(volumes, input$fastq_folder), "/results-fastp/nxf_workflow_report.html", sep = ""),
+                               "-with-report", paste(selectedFolder, "/results-fastp/nxf_workflow_report.html", sep = ""),
                                optional_params$mqc
                                ),
                       
-                      wd = parseDirPath(volumes, input$fastq_folder),
+                      wd = selectedFolder,
                       #echo_cmd = TRUE, echo = TRUE,
                       stdout_line_callback = function(line, proc) {message(line)}, 
                       stdout_callback = cb_count,
@@ -305,22 +308,23 @@
           shinyjs::hide("commands_pannel")
           
           # clean work dir in case run finished ok
-          work_dir <- paste(parseDirPath(volumes, input$fastq_folder), "/work", sep = "")
+          work_dir <- paste(selectedFolder, "/work", sep = "")
           system2("rm", args = c("-rf", work_dir))
+          shiny::showNotification("Temporary work directory deleted", type = "message")
           cat("deleted", work_dir, "\n")
           
           # delete trimmed fastq files in case input$save_trimmed
-          fastp_trimm_folder <- file.path(parseDirPath(volumes, input$fastq_folder), "results-fastp/fastp_trimmed")
+          fastp_trimm_folder <- file.path(selectedFolder, "results-fastp/fastp_trimmed")
           if(!input$save_trimmed) {
             system2("rm", args = c("-rf", fastp_trimm_folder))
             cat("deleted", fastp_trimm_folder, "\n")
           }
             
           # copy mqc and nxf reports to www/ to be able to open, also use hash to enable multiple concurrent users
-          mqc_report <- paste(parseDirPath(volumes, input$fastq_folder), 
+          mqc_report <- paste(selectedFolder, 
                            "/results-fastp/multiqc_report.html", # make sure the nextflow-fastp pipeline writes to "results-fastp"
                            sep = "")
-          nxf_report <- paste(parseDirPath(volumes, input$fastq_folder), 
+          nxf_report <- paste(selectedFolder, 
                               "/results-fastp/nxf_workflow_report.html", sep = "")
            
           system2("cp", args = c(mqc_report, paste("www/", mqc_hash, sep = "")) )
@@ -342,6 +346,14 @@
             )
           })
           
+          # render outputFilesLocation
+          output$outputFilesLocation <- renderUI({
+            actionButton("outLoc", label = paste("Where are the results?"), 
+                         icon = icon("th"), 
+                         onclick = sprintf("window.alert('%s')", paste(selectedFolder,"/results-fastp/")
+                                           )
+                        )
+          })
           #
           # build js callback string for shinyalert
           js_cb_string <- sprintf("function(x) { if (x == true) {window.open('%s') ;} } ", mqc_hash)
@@ -373,13 +385,14 @@
     session$onSessionEnded(function() {
       # delete own mqc from www, it is meant to be temp only 
       system2("rm", args = c("-rf", paste("www/", mqc_hash, sep = "")) )
+      system2("rm", args = c("-rf", paste("www/", nxf_hash, sep = "")) )
       
       #user management
       isolate({
         users$count <- users$count - 1
         writeLines(as.character(users$count), con = "userlog")
       })
-      
+      stopApp()
     })
   
     #---

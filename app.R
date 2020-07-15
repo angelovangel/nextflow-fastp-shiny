@@ -233,7 +233,7 @@
                        "--fqpattern", input$fqpattern,
                        "-profile", input$nxf_profile, 
                        optional_params$tower,
-                       "-with-report", paste(selectedFolder, "/nxf_workflow_report.html", sep = ""),
+                       "-with-report", paste(selectedFolder, "/results-fastp/nxf_workflow_report.html", sep = ""),
                        optional_params$mqc)
         
         cat(
